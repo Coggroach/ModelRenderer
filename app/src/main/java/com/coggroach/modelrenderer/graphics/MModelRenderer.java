@@ -10,6 +10,7 @@ import com.coggroach.modelrenderer.R;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -24,19 +25,22 @@ public class MModelRenderer extends AbstractGLRenderer
     private float[] mModelMatrix = new float[16];
     private final FloatBuffer mModelVertices;
     private final FloatBuffer mModelColours;
+    //private final IntBuffer mModelIndices;
 
     Context context;
 
     public MModelRenderer(Context c)
     {
         this.context = c;
-        this.model = new Model(c, R.raw.cylinder);
+        this.model = new Model(c, R.raw.cylinder_triads_texture);
 
-        mModelVertices = ByteBuffer.allocateDirect(model.getPositionLength() * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        mModelColours = ByteBuffer.allocateDirect(model.getColorLength() * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mModelVertices = ByteBuffer.allocateDirect(model.getVerticesLength() * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mModelColours = ByteBuffer.allocateDirect(model.getTexturesLength() * mBytesPerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        //mModelIndices = ByteBuffer.allocateDirect(model.get() * mBytesPerFloat).order(ByteOrder.nativeOrder()).asIntBuffer();
 
-        mModelVertices.put(model.getPositionData()).position(0);
-        mModelColours.put(model.getColourData()).position(0);
+        mModelVertices.put(Model.getArrayListAsPrimitive(model.getVertices())).position(0);
+        mModelColours.put(Model.getArrayListAsPrimitive(model.getTextures())).position(0);
+       //mModelIndices.put(Model.getArrayListAsPrimitive(model.getVertices())).position(0);
     }
 
     @Override
@@ -130,8 +134,10 @@ public class MModelRenderer extends AbstractGLRenderer
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
     {
-        super.onSurfaceCreated(glUnused, config);
+        //super.onSurfaceCreated(glUnused, config);
+        GLES20.glClearColor(1.0F, 1.0F, 1.0F, 1.0F);
         GLES20.glEnable(GLES20.GL_CULL_FACE);
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
 
         this.setViewMatrix();
 
@@ -170,7 +176,7 @@ public class MModelRenderer extends AbstractGLRenderer
 
         // Draw the triangle facing straight on.
         Matrix.setIdentityM(mModelMatrix, 0);
-        //Matrix.translateM(mModelMatrix, 0, 0.0f, -0.5f, 0.0f);
+        //Matrix.translateM(mModelMatrix, 0, -2.0f, 0.0f, 0.0f);
         Matrix.rotateM(mModelMatrix, 0, angleInDegrees, 0.0f, 0.5f, 0.0f);
 
         // Pass in the position information
@@ -194,6 +200,8 @@ public class MModelRenderer extends AbstractGLRenderer
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVPMatrix, 0);
 
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, model.getPositionLength()/3);
+        //GLES20.glDrawElements(GLES20.GL_TRIANGLES, model.getIndicesLength(), GLES20.GL_UNSIGNED_INT, mModelIndices);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, model.getVerticesLength()/3);
+        //GLES20.glDisable(GLES20.GL_CULL_FACE);
     }
 }

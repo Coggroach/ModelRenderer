@@ -5,6 +5,9 @@ import android.util.Log;
 
 import com.coggroach.modelrenderer.common.ResourceReader;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 
 /**
@@ -13,111 +16,66 @@ import java.util.Random;
 public class Model
 {
     private String name;
-    private String raw;
-    private float[] data;
-    private float[] colours; // RGB 4 Data
-    private int dataLength;
-    private int colorLength;
+    private ArrayList<Float> vertices;
+    private ArrayList<Float> textures;
+    private ArrayList<Float> normals;
+    private ArrayList<Short> faceVertices;
+    private ArrayList<Short> faceTextures;
+    private ArrayList<Short> faceNormals;
+
 
     public Model(Context c, int resId)
     {
-        this.dataLength = 0;
-        this.raw = ResourceReader.getString(c, resId);
-        //Log.i("Model", this.raw);
-        this.count(this.raw);
-        this.data = new float[this.dataLength];
-        this.colorLength = (int)(this.dataLength * (float)4/3);
+        vertices = new ArrayList<Float>();
+        textures = new ArrayList<Float>();
+        normals = new ArrayList<Float>();
+        faceVertices = new ArrayList<Short>();
+        faceTextures = new ArrayList<Short>();
+        faceNormals = new ArrayList<Short>();
 
-        this.colours = new float[this.colorLength];
-        this.populatePosition(this.raw);
-        this.generateColors();
-
-        Log.i(name, String.valueOf(dataLength));
-        Log.i(name, String.valueOf(colorLength));
-        print();
+        populate(ResourceReader.getString(c, resId));
     }
 
-    public void print()
+    public static void addFloatToArrayList(ArrayList<Float> list, String s, String regex)
     {
-        String s = "";
-        for(int i = 0; i < this.data.length; i+=3)
+        if(s != null)
         {
-            s += "v: ";
-            s += String.valueOf(data[i]);
-            s += " ";
-            s += String.valueOf(data[i+1]);
-            s += " ";
-            s += String.valueOf(data[i+2]);
-            s += " ";
-
-            Log.i(this.name, s);
-            s = "";
+            String[] subLine = s.split(regex);
+            if (subLine != null)
+                for (int j = 1; j < subLine.length; j++) {
+                    if (subLine[j] != null)
+                    {
+                        Float f = Float.valueOf(subLine[j]);
+                        if (f != null)
+                            list.add(f);
+                    }
+                }
         }
     }
 
-    public void count(String s)
+    public void populate(String s)
     {
         String[] lines = s.split("\n");
-        for(int i = 0; i < lines.length; i++) {
-            char c = lines[i].charAt(0);
-            switch (c) {
-                case 'o':
-                    this.name = lines[i].replaceAll("o ", "");
-                    break;
-                case 'v':
-                    this.dataLength += 3;
-                    break;
-                case 'f':
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
-    public void populatePosition(String s)
-    {
-        String[] lines = s.split("\n");
-        int index = 0;
         for(int i = 0; i < lines.length; i++)
         {
-            if(lines[i].charAt(0) == 'v')
-            {
-                String[] subLines = lines[i].split(" ");
-
-                this.data[index] = Float.valueOf(subLines[1]);
-                this.data[index+1] = Float.valueOf(subLines[2]);
-                this.data[index+2] = Float.valueOf(subLines[3]);
-
-                index += 3;
+            if(lines[i] != null) {
+                if (lines[i].contains("v ")) {
+                    addFloatToArrayList(vertices, lines[i], " ");
+                } else if (lines[i].contains("vt ")) {
+                    addFloatToArrayList(textures, lines[i], " ");
+                } else if (lines[i].contains("vn ")) {
+                    addFloatToArrayList(normals, lines[i], " ");
+                } else if (lines[i].contains("f ")) {
+                    String[] faces = lines[i].split("/");
+                    if(faces.length == 3)
+                    {
+                        faceVertices.add(Short.valueOf(faces[0]));
+                        faceTextures.add(Short.valueOf(faces[1]));
+                        faceNormals.add(Short.valueOf(faces[2]));
+                    }
+                }
             }
         }
-    }
-
-    public void generateColors()
-    {
-        Random rand = new Random();
-        for(int i = 0; i < this.colours.length; i++)
-        {
-            if( (i+1) % 4 == 0)
-            {
-                this.colours[i] = 1.0F;
-            }
-            else
-            {
-                this.colours[i] = rand.nextFloat();
-            }
-        }
-    }
-
-    public float[] getPositionData()
-    {
-        return this.data;
-    }
-
-    public float[] getColourData()
-    {
-        return this.colours;
     }
 
     public String getName()
@@ -125,14 +83,49 @@ public class Model
         return this.name;
     }
 
-    public int getPositionLength()
+    public static Object[] getArrayListAsObject(ArrayList<Float> list)
     {
-        return this.dataLength;
+        return list.toArray(new Float[list.size()]);
     }
 
-    public int getColorLength()
+    public static float[] getArrayListAsPrimitive(ArrayList<Float> list)
     {
-        return this.colorLength;
+        float[] primitive = new float[list.size()];
+        int i = 0;
+        for(Float f : list)
+        {
+            primitive[i++] = (f != null ? f : Float.NaN);
+        }
+        return primitive;
     }
 
+    public ArrayList<Float> getVertices()
+    {
+        return this.vertices;
+    }
+
+    public ArrayList<Float> getTextures()
+    {
+        return this.textures;
+    }
+
+    public ArrayList<Float> getNormals()
+    {
+        return this.normals;
+    }
+
+    public int getVerticesLength()
+    {
+        return this.vertices.size();
+    }
+
+    public int getNormalsLength()
+    {
+        return this.normals.size();
+    }
+
+    public int getTexturesLength()
+    {
+        return this.textures.size();
+    }
 }

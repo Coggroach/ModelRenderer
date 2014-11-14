@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 
 import com.coggroach.modelrenderer.graphics.MModelRenderer;
+import com.coggroach.modelrenderer.graphics.TModelRenderer;
 
 /**
  * Created by TARDIS on 13/11/2014.
@@ -20,9 +21,12 @@ public class MainActivity extends Activity
         mGLView = new GLSurfaceView(this);
         mGLView.setEGLContextClientVersion(2);
 
-        mGLView.setRenderer(new MModelRenderer(this));
+        mGLView.setRenderer(
+                new MModelRenderer(this)
+                //new TModelRenderer(this)
+        );
 
-        setContentView(mGLView);
+        this.setContentView(mGLView);
     }
 
     @Override
